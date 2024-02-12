@@ -17,9 +17,11 @@ import java.util.stream.Collectors;
 public enum LanguageEnum {
 
     /**
-     * java 0
+     * java 0, c 1, cpp 2
      */
-    JAVA("java");
+    JAVA("java"),
+    C("c"),
+    CPP("cpp");
 
     /**
      * value
