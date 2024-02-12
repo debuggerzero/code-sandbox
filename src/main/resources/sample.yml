@@ -1,0 +1,7 @@
+# 应用服务 WEB 访问端口
+server:
+  port: 8082
+
+# 判题程序目录
+judge:
+  scriptPath: judge/judge
