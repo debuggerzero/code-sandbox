@@ -3,10 +3,7 @@ package com.zero.codesandbox.controller;
 import com.zero.codesandbox.judge.service.JudgeService;
 import com.zero.codesandbox.model.ExecuteCodeRequest;
 import com.zero.codesandbox.model.ExecuteCodeResponse;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
 import java.util.List;
@@ -41,7 +38,7 @@ public class CodeSandboxController {
      * @return 结果
      */
     @PostMapping("/judge")
-    public ExecuteCodeResponse executeCode(ExecuteCodeRequest task) {
+    public ExecuteCodeResponse executeCode(@RequestBody ExecuteCodeRequest task) {
         return judgeService.executeCode(task);
     }
 
