@@ -1,16 +1,20 @@
 FROM centos:7
 LABEL authors="ZERO"
-MAINTAINER zero
 
 # 设置工作路径
-ENV MYPATH /usr
+ENV MYPATH=/usr
 WORKDIR $MYPATH
 
 # 设置端口
 EXPOSE 8082
 
 # 安装沙箱编译所需环境
-RUN yum install -y java-1.8.0-openjdk* gcc gcc-c++ kernel-devel
+RUN sed -i 's/^mirrorlist=/#mirrorlist=/g' /etc/yum.repos.d/CentOS-*.repo \
+    && sed -i 's|^#baseurl=http://mirror.centos.org|baseurl=http://vault.centos.org|g' /etc/yum.repos.d/CentOS-*.repo \
+    && yum makecache \
+    && yum install -y java-1.8.0-openjdk java-1.8.0-openjdk-devel gcc gcc-c++ \
+    && yum clean all \
+    && rm -rf /var/cache/yum
 
 # 复制文件到对应目录
 COPY judge.c code-sandbox/judge/

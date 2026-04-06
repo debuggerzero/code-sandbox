@@ -21,6 +21,17 @@ import java.util.concurrent.TimeUnit;
 @Slf4j
 public class ProcessUtil {
 
+    private static final int LOG_PREVIEW_MAX_LENGTH = 500;
+
+    private static String safePreview(String message) {
+        if (StringUtils.isBlank(message)) {
+            return "";
+        }
+        return message.length() > LOG_PREVIEW_MAX_LENGTH
+                ? message.substring(0, LOG_PREVIEW_MAX_LENGTH) + "...(truncated)"
+                : message;
+    }
+
     /**
      * 通用方法获取输出信息
      *
@@ -45,7 +56,7 @@ public class ProcessUtil {
                 inputStream.close();
                 bufferedReader.close();
             } catch (IOException e) {
-                log.error(e.getMessage());
+                log.error("关闭进程流失败，error={}", e.getMessage(), e);
             }
         }
     }
@@ -53,22 +64,44 @@ public class ProcessUtil {
     public static ExecuteMessage exec(String cmd, long milliseconds) {
         Runtime runtime = Runtime.getRuntime();
         final Process exec;
+        long startTime = System.currentTimeMillis();
+        log.info("开始执行命令，cmd={}, timeoutMs={}", cmd, milliseconds);
         try {
             exec = runtime.exec(cmd);
             if (!exec.waitFor(milliseconds, TimeUnit.MILLISECONDS)) {
                 if (exec.isAlive()) {
                     exec.destroy();
                 }
+                long cost = System.currentTimeMillis() - startTime;
+                log.warn("命令执行超时，cmd={}, timeoutMs={}, costMs={}", cmd, milliseconds, cost);
                 throw new InterruptedException();
             }
         } catch (IOException e) {
+            long cost = System.currentTimeMillis() - startTime;
+            log.error("命令执行异常，cmd={}, timeoutMs={}, costMs={}, error={}", cmd, milliseconds, cost, e.getMessage(), e);
             return new ExecuteMessage(null, e.getMessage());
         } catch (InterruptedException e) {
+            long cost = System.currentTimeMillis() - startTime;
+            log.warn("命令执行被中断或超时，cmd={}, timeoutMs={}, costMs={}", cmd, milliseconds, cost);
             return new ExecuteMessage(null, "timeOut");
         }
         ExecuteMessage res = new ExecuteMessage();
-        res.setMessage(getResponseMessage(exec.getInputStream()));
-        res.setErrorMessage(getResponseMessage(exec.getErrorStream()));
+        int exitCode = exec.exitValue();
+        String stdout = getResponseMessage(exec.getInputStream());
+        String stderr = getResponseMessage(exec.getErrorStream());
+        res.setMessage(stdout);
+        res.setErrorMessage(stderr);
+        long cost = System.currentTimeMillis() - startTime;
+        log.info(
+                "命令执行完成，cmd={}, exitCode={}, costMs={}, stdoutLength={}, stderrLength={}, stdoutPreview={}, stderrPreview={}",
+                cmd,
+                exitCode,
+                cost,
+                StringUtils.length(stdout),
+                StringUtils.length(stderr),
+                safePreview(stdout),
+                safePreview(stderr)
+        );
         return res;
     }
 
